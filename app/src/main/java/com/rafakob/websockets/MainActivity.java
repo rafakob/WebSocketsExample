@@ -20,6 +20,9 @@ import com.koushikdutta.async.http.AsyncHttpClient;
 import com.koushikdutta.async.http.AsyncHttpGet;
 import com.koushikdutta.async.http.WebSocket;
 
+import org.java_websocket.client.WebSocketClient;
+import org.java_websocket.handshake.ServerHandshake;
+
 import java.net.URI;
 import java.net.URISyntaxException;
 
@@ -28,6 +31,8 @@ public class MainActivity extends AppCompatActivity {
     EditText editText;
     WebSocket webSocket;
     MaterialDialog dialog;
+
+    WebSocketClient mWebSocketClient;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -102,10 +107,9 @@ public class MainActivity extends AppCompatActivity {
                 });
 
         // 3. Establish connection
-        consumer.connect();
+//        consumer.connect();
 
-        // 4. Perform any action
-//        subscription.perform("{\"command\":\"subscribe\",\"identifier\":\"{\\\"channel\\\":\\\"SchoolStudentsChannel\\\",\\\"room_id\\\":5}\"}");
+        connectWebSocket();
     }
 
     private void connect() {
@@ -150,5 +154,49 @@ public class MainActivity extends AppCompatActivity {
                 });
             }
         });
+
+
+    }
+
+
+    private void connectWebSocket() {
+        URI uri;
+        try {
+            uri = new URI("ws://192.168.88.51:3000/cable");
+        } catch (URISyntaxException e) {
+            e.printStackTrace();
+            return;
+        }
+
+        mWebSocketClient = new WebSocketClient(uri) {
+            @Override
+            public void onOpen(ServerHandshake serverHandshake) {
+                Log.i("Websocket", "Opened");
+                mWebSocketClient.send("{\"command\":\"subscribe\",\"identifier\":\"{\\\"channel\\\":\\\"SchoolStudentsChannel\\\",\\\"room_id\\\":5}\"}");
+
+//                mWebSocketClient.send("Hello from " + Build.MANUFACTURER + " " + Build.MODEL);
+            }
+
+            @Override
+            public void onMessage(final String s) {
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        Log.i("Websocket", "onMesage " + s);
+                    }
+                });
+            }
+
+            @Override
+            public void onClose(int i, String s, boolean b) {
+                Log.i("Websocket", "Closed " + s);
+            }
+
+            @Override
+            public void onError(Exception e) {
+                Log.i("Websocket", "Error " + e.getMessage());
+            }
+        };
+        mWebSocketClient.connect();
     }
 }
