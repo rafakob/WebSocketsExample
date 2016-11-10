@@ -4,14 +4,24 @@ import android.app.NotificationManager;
 import android.os.Bundle;
 import android.support.v4.app.NotificationCompat;
 import android.support.v7.app.AppCompatActivity;
+import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
 
 import com.afollestad.materialdialogs.MaterialDialog;
+import com.google.gson.JsonElement;
+import com.hosopy.actioncable.ActionCable;
+import com.hosopy.actioncable.ActionCableException;
+import com.hosopy.actioncable.Channel;
+import com.hosopy.actioncable.Consumer;
+import com.hosopy.actioncable.Subscription;
 import com.koushikdutta.async.http.AsyncHttpClient;
 import com.koushikdutta.async.http.AsyncHttpGet;
 import com.koushikdutta.async.http.WebSocket;
+
+import java.net.URI;
+import java.net.URISyntaxException;
 
 public class MainActivity extends AppCompatActivity {
     Button sendButton;
@@ -33,7 +43,69 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-        connect();
+
+        // 1. Setup
+        URI uri = null;
+        try {
+            uri = new URI("ws://staging.childcarecentersoftware.com/cable");
+        } catch (URISyntaxException e) {
+            e.printStackTrace();
+        }
+
+        // 2. Create subscription
+        Channel channel = new Channel("SchoolStudentsChannel");
+        channel.addParam("room_id", 5);
+
+        Consumer.Options options = new Consumer.Options();
+        options.reconnection = true;
+        options.reconnectionMaxAttempts = 5;
+        options.reconnectionDelayMax = 1000 * 10;
+        Consumer consumer = ActionCable.createConsumer(uri, options);
+
+        Subscription subscription = consumer.getSubscriptions().create(channel);
+
+        subscription
+                .onConnected(new Subscription.ConnectedCallback() {
+                    @Override
+                    public void call() {
+                        // Called when the subscription has been successfully completed
+                        Log.d("Websocket", "onConnected");
+                    }
+                })
+                .onRejected(new Subscription.RejectedCallback() {
+                    @Override
+                    public void call() {
+                        // Called when the subscription is rejected by the server
+                        Log.d("Websocket", "onRejected");
+                    }
+                })
+                .onReceived(new Subscription.ReceivedCallback() {
+                    @Override
+                    public void call(JsonElement data) {
+                        // Called when the subscription receives data from the server
+                        Log.d("Websocket", "onReceived");
+                    }
+                })
+                .onDisconnected(new Subscription.DisconnectedCallback() {
+                    @Override
+                    public void call() {
+                        // Called when the subscription has been closed
+                        Log.d("Websocket", "onDisconnected");
+                    }
+                })
+                .onFailed(new Subscription.FailedCallback() {
+                    @Override
+                    public void call(ActionCableException e) {
+                        // Called when the subscription encounters any error
+                        Log.d("Websocket", "onFailed: " + e.toString());
+                    }
+                });
+
+        // 3. Establish connection
+        consumer.connect();
+
+        // 4. Perform any action
+//        subscription.perform("{\"command\":\"subscribe\",\"identifier\":\"{\\\"channel\\\":\\\"SchoolStudentsChannel\\\",\\\"room_id\\\":5}\"}");
     }
 
     private void connect() {
