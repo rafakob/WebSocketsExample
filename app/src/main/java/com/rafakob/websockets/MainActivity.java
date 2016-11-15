@@ -52,7 +52,8 @@ public class MainActivity extends AppCompatActivity {
         // 1. Setup
         URI uri = null;
         try {
-            uri = new URI("ws://staging.childcarecentersoftware.com/cable");
+            uri = new URI("ws://192.168.88.51:3000/cable");
+//            uri = new URI("ws://staging.childcarecentersoftware.com/cable");
         } catch (URISyntaxException e) {
             e.printStackTrace();
         }
@@ -162,7 +163,9 @@ public class MainActivity extends AppCompatActivity {
     private void connectWebSocket() {
         URI uri;
         try {
-            uri = new URI("ws://192.168.88.51:3000/cable");
+//            uri = new URI("ws://192.168.88.51:3000/cable");
+
+            uri = new URI("ws://staging.childcarecentersoftware.com/cable");
         } catch (URISyntaxException e) {
             e.printStackTrace();
             return;
@@ -172,9 +175,7 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onOpen(ServerHandshake serverHandshake) {
                 Log.i("Websocket", "Opened");
-                mWebSocketClient.send("{\"command\":\"subscribe\",\"identifier\":\"{\\\"channel\\\":\\\"SchoolStudentsChannel\\\",\\\"room_id\\\":5}\"}");
-
-//                mWebSocketClient.send("Hello from " + Build.MANUFACTURER + " " + Build.MODEL);
+                mWebSocketClient.send("{\"command\":\"subscribe\",\"identifier\":\"{\\\"channel\\\":\\\"SchoolStudentsChannel\\\",\\\"room_id\\\":  5}\"}");
             }
 
             @Override
@@ -189,7 +190,8 @@ public class MainActivity extends AppCompatActivity {
 
             @Override
             public void onClose(int i, String s, boolean b) {
-                Log.i("Websocket", "Closed " + s);
+                Log.i("Websocket", "Closed " + s + "code " + i);
+                connectWebSocket();
             }
 
             @Override
